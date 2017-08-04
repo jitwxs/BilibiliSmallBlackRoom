@@ -17,9 +17,17 @@ def getInfo(url):
     global conn,cursor
     page = 1
     try:
-        cursor.execute("CREATE TABLE db_data(用户名 Text,封禁原因 Text,封禁时间 Text,封禁证据 Text)")
+        cursor.execute('''CREATE TABLE IF NOT EXISTS db_data (
+                          id varchar(8),
+                          uid varchar(16),
+                          name text,
+                          reason text,
+                          time text,
+                          evidence text,
+                          PRIMARY KEY(id)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;''')
     except:
-        print('新建表失败,可能表已经存在')
+        print('建表发生异常')
 
     while True:
         html = getHTMLText(url + str(page))
@@ -34,6 +42,8 @@ def getInfo(url):
             i=re_h.sub('',i)
             try:
                 tempDict = json.loads(i)
+                id = tempDict['id']
+                uid = tempDict['uid']
                 name = tempDict['uname']
                 reason = tempDict['punishTitle']
                 if tempDict['blockedDays'] == 0:
@@ -41,12 +51,12 @@ def getInfo(url):
                 else:
                     time = tempDict['blockedDays']
                 evidence = tempDict['originContentModify']
-                sql = "insert into db_data(用户名,封禁原因,封禁时间,封禁证据) values ('{}','{}','{}','{}')".format(name,reason,time,evidence)
+                sql = "insert into db_data(id,uid,name,reason,time,evidence) values ('{}','{}','{}','{}','{}','{}')".format(id,uid,name,reason,time,evidence)
                 cursor.execute(sql)
                 conn.commit()
             except:
                 pass
-        print('当前存储页数：{}'.format(page))
+        print('当前爬取页数：{}'.format(page))
         page += 1
 
 def closeDB():
@@ -54,10 +64,13 @@ def closeDB():
     cursor.close()
     conn.close()
 
-def main():
+if __name__=="__main__":
     url = 'http://www.bilibili.com/blackroom/web/blocked_info?originType=0&pageNo='
-    print('欢迎使用bilibili小黑屋爬虫')
+    print('************bilibili小黑屋爬虫************')
+    print('注意事项：')
+    print('1.本程序采用MySQL数据库，请确认数据库已经正确安装')
+    print('2.请确认已修改程序开头的数据库连接信息，包括数据库、用户名和密码')
+    print('****************************************')
+    input('确认无误后，按任意键开始爬取')
     getInfo(url)
     closeDB()
-    
-main()
